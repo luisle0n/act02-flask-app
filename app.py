@@ -3,11 +3,11 @@ import requests
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route('/')
 def home():
     url = "https://gist.githubusercontent.com/reroes/502d11c95f1f8a17d300ece914464c57/raw/872172ebb60e22e95baf8f50e2472551f49311ff/gistfile1.txt"
     response = requests.get(url)
-    datos_filtrados = []
+    personas = []
 
     if response.status_code == 200:
         lineas = response.text.strip().split("\n")
@@ -16,36 +16,29 @@ def home():
             if len(partes) == 4:
                 cedula = partes[0].strip()
                 if cedula.startswith(('3', '4', '5', '7')):
-                    datos_filtrados.append({
-                        "cedula": partes[0].strip(),
-                        "nombre": partes[1].strip(),
-                        "apellido": partes[2].strip(),
-                        "email": partes[3].strip()
-                    })
+                    personas.append(partes)
 
-    html = """
-    <!doctype html>
-    <html>
-    <head><title>Personas filtradas</title></head>
-    <body>
-        <h2>Personas con cédulas que inician en 3, 4, 5 o 7</h2>
-        <table border="1" cellpadding="5">
-            <tr>
-                <th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Email</th>
-            </tr>
-            {% for persona in personas %}
-            <tr>
-                <td>{{ persona.cedula }}</td>
-                <td>{{ persona.nombre }}</td>
-                <td>{{ persona.apellido }}</td>
-                <td>{{ persona.email }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </body>
-    </html>
+    tabla_html = """
+    <h2>Personas con cédulas que inician en 3, 4, 5 o 7</h2>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Email</th>
+        </tr>
     """
-    return render_template_string(html, personas=datos_filtrados)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    for p in personas:
+        tabla_html += f"""
+        <tr>
+            <td>{p[0].strip()}</td>
+            <td>{p[1].strip()}</td>
+            <td>{p[2].strip()}</td>
+            <td>{p[3].strip()}</td>
+        </tr>
+        """
+
+    tabla_html += "</table>"
+
+    return tabla_html
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
