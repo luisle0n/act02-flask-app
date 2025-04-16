@@ -1,39 +1,41 @@
 from flask import Flask
 import requests
+from datetime import datetime
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    
-    
-    url = "https://gist.githubusercontent.com/reroes/502d11c95f1f8a17d300ece914464c57/raw/872172ebb60e22e95baf8f50e2472551f49311ff/gistfile1.txt"
+    # Leer archivo desde la URL
+    url = 'https://gist.githubusercontent.com/reroes/502d11c95f1f8a17d300ece914464c57/raw/872172ebb60e22e95baf8f50e2472551f49311ff/gistfile1.txt'
     response = requests.get(url)
-   
 
-    personas = []
+    # Asegurar que la respuesta fue exitosa
+    if response.status_code != 200:
+        return f'Error al acceder al archivo: {response.status_code}'
 
-    for linea in response.splitlines():
-        partes = linea.split("|")
-        if len(partes) == 4:
-            cedula = partes[0].strip()
-            if cedula.startswith(('3', '4', '5', '7')):
-                personas.append(partes)
+    # Procesar líneas del archivo
+    lineas = response.text.strip().split('\n')
+    encabezados = lineas[0].split('|')
+    
+    # Solo líneas donde el primer carácter del primer campo esté en {'3','4','5','7'}
+    personas = [line.split('|') for line in lineas[1:] if line[0] in {'3', '4', '5', '7'}]
 
-    if not personas:
-        return "<p>No se encontraron personas con cédulas que comiencen en 3, 4, 5 o 7.</p>"
+    # Construir tabla HTML
+    tabla = "<table border='1'><thead><tr>"
+    for h in encabezados:
+        tabla += f"<th>{h}</th>"
+    tabla += "</tr></thead><tbody>"
+    
+    for persona in personas:
+        tabla += "<tr>" + ''.join(f"<td>{campo}</td>" for campo in persona) + "</tr>"
+    tabla += "</tbody></table>"
 
-    html = """
-    <h2>Personas filtradas</h2>
-    <table border="1" cellpadding="5">
-        <tr><th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Email</th></tr>
-    """
+    # Formatear fecha actual
+    actual = datetime.now()
+    fecha_formateada = actual.strftime("%d de %B de %Y, %H:%M:%S")
 
-    for p in personas:
-        html += f"<tr><td>{p[0].strip()}</td><td>{p[1].strip()}</td><td>{p[2].strip()}</td><td>{p[3].strip()}</td></tr>"
-
-    html += "</table>"
-    return html
+    return f'<h2>Listado de personas (ID inicia con 3, 4, 5 o 7)</h2>{tabla}<p><b>Fecha actual:</b> {fecha_formateada}</p>'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
